@@ -88,7 +88,24 @@ jobs:
           with:
               context: .
               push: true
-              tags: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}    
+              tags: ${{ vars.DOCKERHUB_USERNAME }}/solar-system:${{ github.sha }}  
+               
+    promote-to-dev-environment:
+        runs-on: ubuntu-latest
+        needs: docker
+        steps:
+           - run: |
+                echo "promoting into dev environment!"
+                git config --global user.email ahmedgmal.383@gmail.com && git config --global user.name ahmedgmal.383
+                echo "cloning config repo $CONFIG_REPO_NAME"
+                git clone https://oauth2:${{ secrets.GH_PAT }}@github.com/${{ github.repository_owner }}/$CONFIG_REPO_NAME.git
+                cd $CONFIG_REPO_NAME
+                echo "checkout main branch"
+                git checkout main
+                echo "updating image tag in values file"
+                sed -i 's|\(image: ahmedgmansour/solar-system:\)[^ ]*|\1'${{ github.sha }}'|' helm/solar-system/deployment.yaml
+                git add . && git commit -m "update image tag"
+                git push
 
 
     #     # - name: Setup NodeJS Version - 18
